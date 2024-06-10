@@ -1,0 +1,5 @@
+include scrapy_selenium_grid/README.rst
+exclude requirements.txt
+exclude .git*
+exclude MANIFEST.in
+exclude venv*
