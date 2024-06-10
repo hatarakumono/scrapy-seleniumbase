@@ -15,7 +15,7 @@ from twisted.internet.defer import Deferred
 #-
 from .webdriver import WebDriver
 
-DEFAULT_BROWSER_NAME = 'chromium'
+DEFAULT_BROWSER_NAME = 'chrome'
 DEFAULT_CONTEXT_NAME = 'default'
 PERSISTENT_CONTEXT_PATH_KEY = 'user_data_dir'
 
