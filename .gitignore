@@ -1,0 +1,13 @@
+# git
+
+*.orig
+
+
+# python
+
+*.pyc
+
+
+# vim
+
+*.sw[op]
