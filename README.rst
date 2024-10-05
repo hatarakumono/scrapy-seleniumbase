@@ -1,1 +1,1 @@
-scrapy_selenium_grid/README.rst
+scrapy_seleniumbase/README.rst

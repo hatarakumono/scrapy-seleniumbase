@@ -1,4 +1,4 @@
-include scrapy_selenium_grid/README.rst
+include scrapy_seleniumbase/README.rst
 exclude requirements.txt
 exclude .git*
 exclude MANIFEST.in

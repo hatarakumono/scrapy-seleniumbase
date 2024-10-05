@@ -15,66 +15,67 @@
 # specific language governing permissions and limitations
 # under the License.
 """The WebDriver implementation."""
-from base64 import b64decode
-from base64 import urlsafe_b64encode
-from contextlib import asynccontextmanager
-from contextlib import contextmanager
-from contextlib import suppress
+
 import os
 import pkgutil
 import types
-from typing import Awaitable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Type
-from typing import Union
 import warnings
 import zipfile
-#-
-from selenium.common.exceptions import InvalidArgumentException
-from selenium.common.exceptions import JavascriptException
-from selenium.common.exceptions import NoSuchCookieException
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import WebDriverException
+from base64 import b64decode, urlsafe_b64encode
+from contextlib import asynccontextmanager, contextmanager, suppress
+from typing import Awaitable, Dict, List, Optional, Type, Union
+
+# -
+from selenium.common.exceptions import (
+    InvalidArgumentException,
+    JavascriptException,
+    NoSuchCookieException,
+    NoSuchElementException,
+    WebDriverException,
+)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.options import BaseOptions
 from selenium.webdriver.common.print_page_options import PrintOptions
 from selenium.webdriver.common.timeouts import Timeouts
-from selenium.webdriver.common.virtual_authenticator import Credential
 from selenium.webdriver.common.virtual_authenticator import (
-        VirtualAuthenticatorOptions,)
-from selenium.webdriver.common.virtual_authenticator import (
-        required_virtual_authenticator,)
+    Credential,
+    VirtualAuthenticatorOptions,
+    required_virtual_authenticator,
+)
 from selenium.webdriver.remote import webdriver
 from selenium.webdriver.remote.bidi_connection import BidiConnection
 from selenium.webdriver.remote.command import Command
 from selenium.webdriver.remote.errorhandler import ErrorHandler
-from selenium.webdriver.remote.file_detector import FileDetector
-from selenium.webdriver.remote.file_detector import LocalFileDetector
+from selenium.webdriver.remote.file_detector import FileDetector, LocalFileDetector
 from selenium.webdriver.remote.script_key import ScriptKey
 from selenium.webdriver.support.relative_locator import RelativeBy
-#-
+
+# -
 from .mobile import Mobile
 from .remote_connection.base import RemoteConnection
 from .shadowroot import ShadowRoot
 from .switch_to import SwitchTo
 from .webelement import WebElement
 
-def get_remote_connection(capabilities, command_executor, keep_alive,
-        ignore_local_proxy=False):
+
+def get_remote_connection(capabilities, command_executor, keep_alive, ignore_local_proxy=False):
     from .remote_connection.chrome import ChromeRemoteConnection
     from .remote_connection.edge import EdgeRemoteConnection
     from .remote_connection.firefox import FirefoxRemoteConnection
     from .remote_connection.safari import SafariRemoteConnection
 
-    candidates = [ChromeRemoteConnection, EdgeRemoteConnection,
-            SafariRemoteConnection, FirefoxRemoteConnection]
-    handler = next((c for c in candidates \
-            if c.browser_name == capabilities.get("browserName")), RemoteConnection)
+    candidates = [
+        ChromeRemoteConnection,
+        EdgeRemoteConnection,
+        SafariRemoteConnection,
+        FirefoxRemoteConnection,
+    ]
+    handler = next(
+        (c for c in candidates if c.browser_name == capabilities.get("browserName")),
+        RemoteConnection,
+    )
 
-    return handler(command_executor, keep_alive=keep_alive,
-            ignore_proxy=ignore_local_proxy)
+    return handler(command_executor, keep_alive=keep_alive, ignore_proxy=ignore_local_proxy)
 
 
 class WebDriver(webdriver.BaseWebDriver):
@@ -96,9 +97,9 @@ class WebDriver(webdriver.BaseWebDriver):
     _web_element_cls = WebElement
     _shadowroot_cls = ShadowRoot
 
-    def __init__(self, command_executor: RemoteConnection,
-            file_detector: Optional[FileDetector] = None) \
-            -> None:
+    def __init__(
+        self, command_executor: RemoteConnection, file_detector: Optional[FileDetector] = None
+    ) -> None:
         """Create a new driver that will issue commands using the wire
         protocol.
 
@@ -119,16 +120,14 @@ class WebDriver(webdriver.BaseWebDriver):
         self.file_detector = file_detector or LocalFileDetector()
         self._authenticator_id = None
 
-
     @classmethod
     async def create(
-            cls,
-            command_executor: Union[str, RemoteConnection] \
-                = 'http://127.0.0.1:4444',
-            keep_alive: bool = True,
-            file_detector: Optional[FileDetector] = None,
-            options: Optional[Union[BaseOptions, List[BaseOptions]]] = None) \
-            -> None:
+        cls,
+        command_executor: Union[str, RemoteConnection] = "http://127.0.0.1:4444",
+        keep_alive: bool = True,
+        file_detector: Optional[FileDetector] = None,
+        options: Optional[Union[BaseOptions, List[BaseOptions]]] = None,
+    ) -> None:
         """Create a new driver that will issue commands using the wire
         protocol.
 
@@ -151,31 +150,28 @@ class WebDriver(webdriver.BaseWebDriver):
             _ignore_local_proxy = options._ignore_local_proxy
         if isinstance(command_executor, (str, bytes)):
             command_executor = get_remote_connection(
-                    capabilities,
-                    command_executor=command_executor,
-                    keep_alive=keep_alive,
-                    ignore_local_proxy=_ignore_local_proxy)
+                capabilities,
+                command_executor=command_executor,
+                keep_alive=keep_alive,
+                ignore_local_proxy=_ignore_local_proxy,
+            )
         obj = cls(command_executor=command_executor, file_detector=file_detector)
         await obj.start_session(capabilities)
         return obj
 
-
     def __repr__(self):
-        return (
-            f'<{type(self).__module__}.{type(self).__name__} '
-            f'(session="{self.session_id}")>'
-        )
-
+        return f"<{type(self).__module__}.{type(self).__name__} " f'(session="{self.session_id}")>'
 
     async def __aenter__(self):
         return self
 
-
-    async def __aexit__(self, exc_type: Optional[Type[BaseException]],
-            exc: Optional[BaseException],
-            traceback: Optional[types.TracebackType]):
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        traceback: Optional[types.TracebackType],
+    ):
         await self.quit()
-
 
     @contextmanager
     def file_detector_context(self, file_detector_class, *args, **kwargs):
@@ -206,11 +202,9 @@ class WebDriver(webdriver.BaseWebDriver):
             if last_detector:
                 self.file_detector = last_detector
 
-
     @property
     def mobile(self) -> Mobile:
         return self._mobile
-
 
     @property
     def name(self) -> str:
@@ -225,7 +219,6 @@ class WebDriver(webdriver.BaseWebDriver):
             return self.caps["browserName"]
         raise KeyError("browserName not specified in session capabilities")
 
-
     async def start_session(self, capabilities: dict) -> None:
         """Creates a new session with the desired capabilities.
 
@@ -237,7 +230,6 @@ class WebDriver(webdriver.BaseWebDriver):
         response = (await self.execute(Command.NEW_SESSION, caps))["value"]
         self.session_id = response.get("sessionId")
         self.caps = response.get("capabilities")
-
 
     def _wrap_value(self, value):
         if isinstance(value, dict):
@@ -253,20 +245,16 @@ class WebDriver(webdriver.BaseWebDriver):
             return list(self._wrap_value(item) for item in value)
         return value
 
-
     def create_web_element(self, element_id: str) -> WebElement:
         """Creates a web element with the specified `element_id`."""
         return self._web_element_cls(self, element_id)
 
-
     def _unwrap_value(self, value):
         if isinstance(value, dict):
             if "element-6066-11e4-a52e-4f735466cecf" in value:
-                return self.create_web_element(
-                        value["element-6066-11e4-a52e-4f735466cecf"])
+                return self.create_web_element(value["element-6066-11e4-a52e-4f735466cecf"])
             if "shadow-6066-11e4-a52e-4f735466cecf" in value:
-                return self._shadowroot_cls(self,
-                        value["shadow-6066-11e4-a52e-4f735466cecf"])
+                return self._shadowroot_cls(self, value["shadow-6066-11e4-a52e-4f735466cecf"])
             for key, val in value.items():
                 value[key] = self._unwrap_value(val)
             return value
@@ -274,9 +262,7 @@ class WebDriver(webdriver.BaseWebDriver):
             return list(self._unwrap_value(item) for item in value)
         return value
 
-
-    async def execute(self, driver_command: str, params: dict = None) \
-            -> Awaitable[dict]:
+    async def execute(self, driver_command: str, params: dict = None) -> Awaitable[dict]:
         """Sends a command to be executed by a command.CommandExecutor.
 
         :Args:
@@ -303,11 +289,9 @@ class WebDriver(webdriver.BaseWebDriver):
         # a success
         return {"success": 0, "value": None, "sessionId": self.session_id}
 
-
     async def get(self, url: str) -> None:
         """Loads a web page in the current browser session."""
         await self.execute(Command.GET, {"url": url})
-
 
     @property
     async def title(self) -> str:
@@ -320,7 +304,6 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         return (await self.execute(Command.GET_TITLE)).get("value", "")
 
-
     def pin_script(self, script: str, script_key=None) -> ScriptKey:
         """Store common javascript scripts to be executed later by a unique
         hashable ID."""
@@ -328,21 +311,17 @@ class WebDriver(webdriver.BaseWebDriver):
         self.pinned_scripts[script_key_instance.id] = script
         return script_key_instance
 
-
     def unpin(self, script_key: ScriptKey) -> None:
         """Remove a pinned script from storage."""
         try:
             self.pinned_scripts.pop(script_key.id)
         except KeyError:
             raise KeyError(
-                f"No script with key: {script_key} existed in "
-                f"{self.pinned_scripts}"
+                f"No script with key: {script_key} existed in " f"{self.pinned_scripts}"
             ) from None
-
 
     def get_pinned_scripts(self) -> List[str]:
         return list(self.pinned_scripts)
-
 
     async def execute_script(self, script, *args):
         """Synchronously Executes JavaScript in the current window/frame.
@@ -365,10 +344,7 @@ class WebDriver(webdriver.BaseWebDriver):
         converted_args = list(args)
         command = Command.W3C_EXECUTE_SCRIPT
 
-        return (await self.execute(command,
-                {"script": script, "args": converted_args})) \
-                ["value"]
-
+        return (await self.execute(command, {"script": script, "args": converted_args}))["value"]
 
     async def execute_async_script(self, script: str, *args):
         """Asynchronously Executes JavaScript in the current window/frame.
@@ -387,10 +363,7 @@ class WebDriver(webdriver.BaseWebDriver):
         converted_args = list(args)
         command = Command.W3C_EXECUTE_SCRIPT_ASYNC
 
-        return (await self.execute(command,
-                {"script": script, "args": converted_args})) \
-                ["value"]
-
+        return (await self.execute(command, {"script": script, "args": converted_args}))["value"]
 
     @property
     async def current_url(self) -> Awaitable[str]:
@@ -403,7 +376,6 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         return (await self.execute(Command.GET_CURRENT_URL))["value"]
 
-
     @property
     async def page_source(self) -> Awaitable[str]:
         """Gets the source of the current page.
@@ -415,11 +387,9 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         return (await self.execute(Command.GET_PAGE_SOURCE))["value"]
 
-
     @property
     def closed(self):
         return self.command_executor.closed
-
 
     async def close(self) -> Awaitable[None]:
         """Closes the current window.
@@ -430,7 +400,6 @@ class WebDriver(webdriver.BaseWebDriver):
                 driver.close()
         """
         await self.execute(Command.CLOSE)
-
 
     async def quit(self) -> Awaitable[None]:
         """Quits the driver and closes every associated window.
@@ -445,7 +414,6 @@ class WebDriver(webdriver.BaseWebDriver):
         finally:
             await self.command_executor.close()
 
-
     @property
     async def current_window_handle(self) -> Awaitable[str]:
         """Returns the handle of the current window.
@@ -456,7 +424,6 @@ class WebDriver(webdriver.BaseWebDriver):
                 driver.current_window_handle
         """
         return (await self.execute(Command.W3C_GET_CURRENT_WINDOW_HANDLE))["value"]
-
 
     @property
     async def window_handles(self) -> Awaitable[List[str]]:
@@ -469,25 +436,20 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         return (await self.execute(Command.W3C_GET_WINDOW_HANDLES))["value"]
 
-
     async def maximize_window(self) -> Awaitable[None]:
         """Maximizes the current window that webdriver is using."""
         command = Command.W3C_MAXIMIZE_WINDOW
         await self.execute(command, None)
 
-
     async def fullscreen_window(self) -> Awaitable[None]:
         """Invokes the window manager-specific 'full screen' operation."""
         await self.execute(Command.FULLSCREEN_WINDOW)
-
 
     async def minimize_window(self) -> Awaitable[None]:
         """Invokes the window manager-specific 'minimize' operation."""
         await self.execute(Command.MINIMIZE_WINDOW)
 
-
-    async def print_page(self, print_options: Optional[PrintOptions] = None) \
-            -> Awaitable[str]:
+    async def print_page(self, print_options: Optional[PrintOptions] = None) -> Awaitable[str]:
         """Takes PDF of the current page.
 
         The driver makes a best effort to return a PDF based on the
@@ -498,7 +460,6 @@ class WebDriver(webdriver.BaseWebDriver):
             options = print_options.to_dict()
 
         return (await self.execute(Command.PRINT_PAGE, options))["value"]
-
 
     @property
     def switch_to(self) -> SwitchTo:
@@ -520,7 +481,6 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         return self._switch_to
 
-
     # Navigation
     async def back(self) -> Awaitable[None]:
         """Goes one step backward in the browser history.
@@ -532,7 +492,6 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         await self.execute(Command.GO_BACK)
 
-
     async def forward(self) -> Awaitable[None]:
         """Goes one step forward in the browser history.
 
@@ -543,7 +502,6 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         await self.execute(Command.GO_FORWARD)
 
-
     async def refresh(self) -> Awaitable[None]:
         """Refreshes the current page.
 
@@ -553,7 +511,6 @@ class WebDriver(webdriver.BaseWebDriver):
                 driver.refresh()
         """
         await self.execute(Command.REFRESH)
-
 
     # Options
     async def get_cookies(self) -> Awaitable[List[dict]]:
@@ -566,7 +523,6 @@ class WebDriver(webdriver.BaseWebDriver):
                 driver.get_cookies()
         """
         return (await self.execute(Command.GET_ALL_COOKIES))["value"]
-
 
     async def get_cookie(self, name) -> Awaitable[Optional[Dict]]:
         """Get a single cookie by name. Returns the cookie if found, None if
@@ -581,7 +537,6 @@ class WebDriver(webdriver.BaseWebDriver):
             return (await self.execute(Command.GET_COOKIE, {"name": name}))["value"]
         return None
 
-
     async def delete_cookie(self, name) -> Awaitable[None]:
         """Deletes a single cookie with the given name.
 
@@ -592,7 +547,6 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         await self.execute(Command.DELETE_COOKIE, {"name": name})
 
-
     async def delete_all_cookies(self) -> Awaitable[None]:
         """Delete all cookies in the scope of the session.
 
@@ -602,7 +556,6 @@ class WebDriver(webdriver.BaseWebDriver):
                 driver.delete_all_cookies()
         """
         await self.execute(Command.DELETE_ALL_COOKIES)
-
 
     async def add_cookie(self, cookie_dict) -> Awaitable[None]:
         """Adds a cookie to your current session.
@@ -629,7 +582,6 @@ class WebDriver(webdriver.BaseWebDriver):
         else:
             await self.execute(Command.ADD_COOKIE, {"cookie": cookie_dict})
 
-
     # Timeouts
     async def implicitly_wait(self, time_to_wait: float) -> Awaitable[None]:
         """Sets a sticky timeout to implicitly wait for an element to be found,
@@ -645,9 +597,7 @@ class WebDriver(webdriver.BaseWebDriver):
 
                 driver.implicitly_wait(30)
         """
-        await self.execute(Command.SET_TIMEOUTS,
-                {"implicit": int(float(time_to_wait) * 1000)})
-
+        await self.execute(Command.SET_TIMEOUTS, {"implicit": int(float(time_to_wait) * 1000)})
 
     async def set_script_timeout(self, time_to_wait: float) -> Awaitable[None]:
         """Set the amount of time that the script should wait during an
@@ -661,9 +611,7 @@ class WebDriver(webdriver.BaseWebDriver):
 
                 driver.set_script_timeout(30)
         """
-        await self.execute(Command.SET_TIMEOUTS,
-                {"script": int(float(time_to_wait) * 1000)})
-
+        await self.execute(Command.SET_TIMEOUTS, {"script": int(float(time_to_wait) * 1000)})
 
     async def set_page_load_timeout(self, time_to_wait: float) -> Awaitable[None]:
         """Set the amount of time to wait for a page load to complete before
@@ -678,12 +626,11 @@ class WebDriver(webdriver.BaseWebDriver):
                 driver.set_page_load_timeout(30)
         """
         try:
-            await self.execute(Command.SET_TIMEOUTS,
-                    {"pageLoad": int(float(time_to_wait) * 1000)})
+            await self.execute(Command.SET_TIMEOUTS, {"pageLoad": int(float(time_to_wait) * 1000)})
         except WebDriverException:
-            await self.execute(Command.SET_TIMEOUTS,
-                    {"ms": float(time_to_wait) * 1000, "type": "page load"})
-
+            await self.execute(
+                Command.SET_TIMEOUTS, {"ms": float(time_to_wait) * 1000, "type": "page load"}
+            )
 
     @property
     async def timeouts(self) -> Awaitable[Timeouts]:
@@ -701,7 +648,6 @@ class WebDriver(webdriver.BaseWebDriver):
         timeouts["script"] = timeouts.pop("script") / 1000
         return Timeouts(**timeouts)
 
-
     @timeouts.setter
     async def timeouts(self, timeouts) -> Awaitable[None]:
         """Set all timeouts for the session. This will override any previously
@@ -713,12 +659,9 @@ class WebDriver(webdriver.BaseWebDriver):
                 my_timeouts.implicit_wait = 10
                 driver.timeouts = my_timeouts
         """
-        _ = (await self.execute(Command.SET_TIMEOUTS, timeouts._to_json())) \
-                ["value"]
+        _ = (await self.execute(Command.SET_TIMEOUTS, timeouts._to_json()))["value"]
 
-
-    async def find_element(self, by=By.ID, value: Optional[str] = None) \
-            -> Awaitable[WebElement]:
+    async def find_element(self, by=By.ID, value: Optional[str] = None) -> Awaitable[WebElement]:
         """Find an element given a By strategy and locator.
 
         :Usage:
@@ -731,8 +674,7 @@ class WebDriver(webdriver.BaseWebDriver):
         if isinstance(by, RelativeBy):
             elements = await self.find_elements(by=by, value=value)
             if not elements:
-                raise NoSuchElementException(
-                        f"Cannot locate relative element with: {by.root}")
+                raise NoSuchElementException(f"Cannot locate relative element with: {by.root}")
             return elements[0]
 
         if by == By.ID:
@@ -745,13 +687,11 @@ class WebDriver(webdriver.BaseWebDriver):
             by = By.CSS_SELECTOR
             value = f'[name="{value}"]'
 
-        return (await self.execute(Command.FIND_ELEMENT,
-                {"using": by, "value": value})) \
-                ["value"]
+        return (await self.execute(Command.FIND_ELEMENT, {"using": by, "value": value}))["value"]
 
-
-    async def find_elements(self, by=By.ID, value: Optional[str] = None) \
-            -> Awaitable[List[WebElement]]:
+    async def find_elements(
+        self, by=By.ID, value: Optional[str] = None
+    ) -> Awaitable[List[WebElement]]:
         """Find elements given a By strategy and locator.
 
         :Usage:
@@ -765,8 +705,7 @@ class WebDriver(webdriver.BaseWebDriver):
             _pkg = ".".join(__name__.split(".")[:-1])
             raw_function = pkgutil.get_data(_pkg, "findElements.js").decode("utf8")
             find_element_js = (
-                f"/* findElements */return ({raw_function})"
-                f".apply(null, arguments);"
+                f"/* findElements */return ({raw_function})" f".apply(null, arguments);"
             )
             return await self.execute_script(find_element_js, by.to_dict())
 
@@ -782,16 +721,14 @@ class WebDriver(webdriver.BaseWebDriver):
 
         # Return empty list if driver returns null
         # See https://github.com/SeleniumHQ/selenium/issues/4555
-        return (await self.execute(Command.FIND_ELEMENTS,
-                {"using": by, "value": value})) \
-                ["value"] or []
-
+        return (await self.execute(Command.FIND_ELEMENTS, {"using": by, "value": value}))[
+            "value"
+        ] or []
 
     @property
     def capabilities(self) -> dict:
         """Returns the drivers current capabilities being used."""
         return self.caps
-
 
     async def get_screenshot_as_file(self, filename) -> Awaitable[bool]:
         """Saves a screenshot of the current window to a PNG image file.
@@ -809,10 +746,11 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         if not str(filename).lower().endswith(".png"):
             warnings.warn(
-                    "name used for saved screenshot does not match file type. "
-                    "It should end with a `.png` extension",
-                    UserWarning,
-                    stacklevel=2)
+                "name used for saved screenshot does not match file type. "
+                "It should end with a `.png` extension",
+                UserWarning,
+                stacklevel=2,
+            )
         png = await self.get_screenshot_as_png()
         try:
             with open(filename, "wb") as f:
@@ -822,7 +760,6 @@ class WebDriver(webdriver.BaseWebDriver):
         finally:
             del png
         return True
-
 
     async def save_screenshot(self, filename) -> Awaitable[bool]:
         """Saves a screenshot of the current window to a PNG image file.
@@ -840,7 +777,6 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         return await self.get_screenshot_as_file(filename)
 
-
     async def get_screenshot_as_png(self) -> Awaitable[bytes]:
         """Gets the screenshot of the current window as a binary data.
 
@@ -850,7 +786,6 @@ class WebDriver(webdriver.BaseWebDriver):
                 driver.get_screenshot_as_png()
         """
         return b64decode((await self.get_screenshot_as_base64()).encode("ascii"))
-
 
     async def get_screenshot_as_base64(self) -> Awaitable[str]:
         """Gets the screenshot of the current window as a base64 encoded string
@@ -863,9 +798,9 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         return (await self.execute(Command.SCREENSHOT))["value"]
 
-
-    async def set_window_size(self, width, height, windowHandle: str = "current") \
-            -> Awaitable[None]:
+    async def set_window_size(
+        self, width, height, windowHandle: str = "current"
+    ) -> Awaitable[None]:
         """Sets the width and height of the current window. (window.resizeTo)
 
         :Args:
@@ -880,9 +815,7 @@ class WebDriver(webdriver.BaseWebDriver):
         self._check_if_window_handle_is_current(windowHandle)
         await self.set_window_rect(width=int(width), height=int(height))
 
-
-    async def get_window_size(self, windowHandle: str = "current") \
-            -> Awaitable[dict]:
+    async def get_window_size(self, windowHandle: str = "current") -> Awaitable[dict]:
         """Gets the width and height of the current window.
 
         :Usage:
@@ -899,10 +832,9 @@ class WebDriver(webdriver.BaseWebDriver):
 
         return {k: size[k] for k in ("width", "height")}
 
-
-    async def set_window_position(self, x: float, y: float,
-            windowHandle: str = "current") \
-            -> Awaitable[dict]:
+    async def set_window_position(
+        self, x: float, y: float, windowHandle: str = "current"
+    ) -> Awaitable[dict]:
         """Sets the x,y position of the current window. (window.moveTo)
 
         :Args:
@@ -916,7 +848,6 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         self._check_if_window_handle_is_current(windowHandle)
         return await self.set_window_rect(x=int(x), y=int(y))
-
 
     async def get_window_position(self, windowHandle="current") -> Awaitable[dict]:
         """Gets the x,y position of the current window.
@@ -932,15 +863,12 @@ class WebDriver(webdriver.BaseWebDriver):
 
         return {k: position[k] for k in ("x", "y")}
 
-
     def _check_if_window_handle_is_current(self, windowHandle: str) -> None:
         """Warns if the window handle is not equal to `current`."""
         if windowHandle != "current":
             warnings.warn(
-                    "Only 'current' window is supported for W3C compatible "
-                    "browsers.",
-                    stacklevel=2)
-
+                "Only 'current' window is supported for W3C compatible " "browsers.", stacklevel=2
+            )
 
     async def get_window_rect(self) -> Awaitable[dict]:
         """Gets the x, y coordinates of the window as well as height and width
@@ -953,9 +881,7 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         return (await self.execute(Command.GET_WINDOW_RECT))["value"]
 
-
-    async def set_window_rect(self, x=None, y=None, width=None, height=None) \
-            -> Awaitable[dict]:
+    async def set_window_rect(self, x=None, y=None, width=None, height=None) -> Awaitable[dict]:
         """Sets the x, y coordinates of the window as well as height and width
         of the current window. This method is only supported for W3C compatible
         browsers; other browsers should use `set_window_position` and
@@ -970,18 +896,17 @@ class WebDriver(webdriver.BaseWebDriver):
         """
 
         if (x is None and y is None) and (not height and not width):
-            raise InvalidArgumentException(
-                    "x and y or height and width need values")
+            raise InvalidArgumentException("x and y or height and width need values")
 
-        return (await self.execute(Command.SET_WINDOW_RECT,
-                {"x": x, "y": y, "width": width, "height": height})) \
-                ["value"]
-
+        return (
+            await self.execute(
+                Command.SET_WINDOW_RECT, {"x": x, "y": y, "width": width, "height": height}
+            )
+        )["value"]
 
     @property
     def file_detector(self) -> FileDetector:
         return self._file_detector
-
 
     @file_detector.setter
     def file_detector(self, detector) -> None:
@@ -1001,7 +926,6 @@ class WebDriver(webdriver.BaseWebDriver):
             raise WebDriverException("Detector has to be instance of FileDetector")
         self._file_detector = detector
 
-
     @property
     async def orientation(self):
         """Gets the current orientation of the device.
@@ -1012,7 +936,6 @@ class WebDriver(webdriver.BaseWebDriver):
                 orientation = driver.orientation
         """
         return (await self.execute(Command.GET_SCREEN_ORIENTATION))["value"]
-
 
     @orientation.setter
     async def orientation(self, value) -> Awaitable[None]:
@@ -1028,12 +951,11 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         allowed_values = ["LANDSCAPE", "PORTRAIT"]
         if value.upper() in allowed_values:
-            await self.execute(Command.SET_SCREEN_ORIENTATION,
-                    {"orientation": value})
+            await self.execute(Command.SET_SCREEN_ORIENTATION, {"orientation": value})
         else:
             raise WebDriverException(
-                    "You can only set the orientation to 'LANDSCAPE' and 'PORTRAIT'")
-
+                "You can only set the orientation to 'LANDSCAPE' and 'PORTRAIT'"
+            )
 
     @property
     async def log_types(self):
@@ -1046,7 +968,6 @@ class WebDriver(webdriver.BaseWebDriver):
                 driver.log_types
         """
         return (await self.execute(Command.GET_AVAILABLE_LOG_TYPES))["value"]
-
 
     async def get_log(self, log_type):
         """Gets the log for a given log type.
@@ -1064,7 +985,6 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         return (await self.execute(Command.GET_LOG, {"type": log_type}))["value"]
 
-
     @asynccontextmanager
     async def bidi_connection(self):
         webdriver.import_cdp()
@@ -1075,8 +995,7 @@ class WebDriver(webdriver.BaseWebDriver):
             version, ws_url = self._get_cdp_details()
 
         if not ws_url:
-            raise WebDriverException(
-                    "Unable to find url to connect to from capabilities")
+            raise WebDriverException("Unable to find url to connect to from capabilities")
 
         devtools = webdriver.cdp.import_devtools(version)
         async with webdriver.cdp.open_cdp(ws_url) as conn:
@@ -1084,7 +1003,6 @@ class WebDriver(webdriver.BaseWebDriver):
             target_id = targets[0].target_id
             async with conn.open_session(target_id) as session:
                 yield BidiConnection(session, webdriver.cdp, devtools)
-
 
     def _get_cdp_details(self):
         import json
@@ -1094,11 +1012,9 @@ class WebDriver(webdriver.BaseWebDriver):
         http = urllib3.PoolManager()
         _firefox = False
         if self.caps.get("browserName") == "chrome":
-            debugger_address = self.caps.get("goog:chromeOptions") \
-                    .get("debuggerAddress")
+            debugger_address = self.caps.get("goog:chromeOptions").get("debuggerAddress")
         elif self.caps.get("browserName") == "MicrosoftEdge":
-            debugger_address = self.caps.get("ms:edgeOptions") \
-                    .get("debuggerAddress")
+            debugger_address = self.caps.get("ms:edgeOptions").get("debuggerAddress")
         else:
             _firefox = True
             debugger_address = self.caps.get("moz:debuggerAddress")
@@ -1119,22 +1035,19 @@ class WebDriver(webdriver.BaseWebDriver):
 
         return version, websocket_url
 
-
     # Virtual Authenticator Methods
-    async def add_virtual_authenticator(self,
-            options: VirtualAuthenticatorOptions) \
-            -> Awaitable[None]:
+    async def add_virtual_authenticator(
+        self, options: VirtualAuthenticatorOptions
+    ) -> Awaitable[None]:
         """Adds a virtual authenticator with the given options."""
-        self._authenticator_id = (await self.execute(
-                Command.ADD_VIRTUAL_AUTHENTICATOR, options.to_dict())) \
-                ["value"]
-
+        self._authenticator_id = (
+            await self.execute(Command.ADD_VIRTUAL_AUTHENTICATOR, options.to_dict())
+        )["value"]
 
     @property
     def virtual_authenticator_id(self) -> str:
         """Returns the id of the virtual authenticator."""
         return self._authenticator_id
-
 
     @required_virtual_authenticator
     async def remove_virtual_authenticator(self) -> Awaitable[None]:
@@ -1143,51 +1056,51 @@ class WebDriver(webdriver.BaseWebDriver):
         The authenticator is no longer valid after removal, so no
         methods may be called.
         """
-        await self.execute(Command.REMOVE_VIRTUAL_AUTHENTICATOR,
-                {"authenticatorId": self._authenticator_id})
+        await self.execute(
+            Command.REMOVE_VIRTUAL_AUTHENTICATOR, {"authenticatorId": self._authenticator_id}
+        )
         self._authenticator_id = None
-
 
     @required_virtual_authenticator
     async def add_credential(self, credential: Credential) -> Awaitable[None]:
         """Injects a credential into the authenticator."""
-        await self.execute(Command.ADD_CREDENTIAL,
-                {
-                    **credential.to_dict(),
-                    "authenticatorId": self._authenticator_id,
-                })
-
+        await self.execute(
+            Command.ADD_CREDENTIAL,
+            {
+                **credential.to_dict(),
+                "authenticatorId": self._authenticator_id,
+            },
+        )
 
     @required_virtual_authenticator
     async def get_credentials(self) -> Awaitable[List[Credential]]:
         """Returns the list of credentials owned by the authenticator."""
-        credential_data = await self.execute(Command.GET_CREDENTIALS,
-                {"authenticatorId": self._authenticator_id})
-        return [Credential.from_dict(credential) \
-                for credential in credential_data["value"]]
-
+        credential_data = await self.execute(
+            Command.GET_CREDENTIALS, {"authenticatorId": self._authenticator_id}
+        )
+        return [Credential.from_dict(credential) for credential in credential_data["value"]]
 
     @required_virtual_authenticator
-    async def remove_credential(self, credential_id: Union[str, bytearray]) \
-            -> Awaitable[None]:
+    async def remove_credential(self, credential_id: Union[str, bytearray]) -> Awaitable[None]:
         """Removes a credential from the authenticator."""
         # Check if the credential is bytearray converted to b64 string
         if isinstance(credential_id, bytearray):
             credential_id = urlsafe_b64encode(credential_id).decode()
 
-        await self.execute(Command.REMOVE_CREDENTIAL,
-                {
-                    "credentialId": credential_id,
-                    "authenticatorId": self._authenticator_id,
-                })
-
+        await self.execute(
+            Command.REMOVE_CREDENTIAL,
+            {
+                "credentialId": credential_id,
+                "authenticatorId": self._authenticator_id,
+            },
+        )
 
     @required_virtual_authenticator
     async def remove_all_credentials(self) -> Awaitable[None]:
         """Removes all credentials from the authenticator."""
-        await self.execute(Command.REMOVE_ALL_CREDENTIALS,
-                {"authenticatorId": self._authenticator_id})
-
+        await self.execute(
+            Command.REMOVE_ALL_CREDENTIALS, {"authenticatorId": self._authenticator_id}
+        )
 
     @required_virtual_authenticator
     async def set_user_verified(self, verified: bool) -> Awaitable[None]:
@@ -1197,27 +1110,25 @@ class WebDriver(webdriver.BaseWebDriver):
         verified: True if the authenticator will pass user verification,
             False otherwise.
         """
-        await self.execute(Command.SET_USER_VERIFIED,
-                {
-                    "authenticatorId": self._authenticator_id,
-                    "isUserVerified": verified,
-                })
-
+        await self.execute(
+            Command.SET_USER_VERIFIED,
+            {
+                "authenticatorId": self._authenticator_id,
+                "isUserVerified": verified,
+            },
+        )
 
     async def get_downloadable_files(self) -> Awaitable[dict]:
         """Retrieves the downloadable files as a map of file names and their
         corresponding URLs."""
         if "se:downloadsEnabled" not in self.capabilities:
             raise WebDriverException(
-                    "You must enable downloads in order to work with "
-                    "downloadable files.")
+                "You must enable downloads in order to work with " "downloadable files."
+            )
 
-        return (await self.execute(Command.GET_DOWNLOADABLE_FILES)) \
-                ["value"]["names"]
+        return (await self.execute(Command.GET_DOWNLOADABLE_FILES))["value"]["names"]
 
-
-    async def download_file(self, file_name: str, target_directory: str) \
-            -> Awaitable[None]:
+    async def download_file(self, file_name: str, target_directory: str) -> Awaitable[None]:
         """Downloads a file with the specified file name to the target
         directory.
 
@@ -1226,15 +1137,15 @@ class WebDriver(webdriver.BaseWebDriver):
         """
         if "se:downloadsEnabled" not in self.capabilities:
             raise WebDriverException(
-                    "You must enable downloads in order to work with "
-                    "downloadable files.")
+                "You must enable downloads in order to work with " "downloadable files."
+            )
 
         if not os.path.exists(target_directory):
             os.makedirs(target_directory)
 
-        contents = (await self.execute(Command.DOWNLOAD_FILE,
-                {"name": file_name})) \
-                ["value"]["contents"]
+        contents = (await self.execute(Command.DOWNLOAD_FILE, {"name": file_name}))["value"][
+            "contents"
+        ]
 
         target_file = os.path.join(target_directory, file_name)
         with open(target_file, "wb") as file:
@@ -1243,12 +1154,11 @@ class WebDriver(webdriver.BaseWebDriver):
         with zipfile.ZipFile(target_file, "r") as zip_ref:
             zip_ref.extractall(target_directory)
 
-
     async def delete_downloadable_files(self) -> Awaitable[None]:
         """Deletes all downloadable files."""
         if "se:downloadsEnabled" not in self.capabilities:
             raise WebDriverException(
-                    "You must enable downloads in order to work with "
-                    "downloadable files.")
+                "You must enable downloads in order to work with " "downloadable files."
+            )
 
         await self.execute(Command.DELETE_DOWNLOADABLE_FILES)

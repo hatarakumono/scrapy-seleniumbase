@@ -1,5 +1,5 @@
 ==========================================================
-scrapy-selenium-grid: Selenium Grid integration for Scrapy
+scrapy-seleniumbase: Selenium Grid integration for Scrapy
 ==========================================================
 
 A Scrapy_ Download Handler which performs requests using `Selenium Grid`_
@@ -32,12 +32,12 @@ Minimum required versions
 Installation
 ============
 
-:code:`scrapy-selenium-grid` is available on PyPI and can be installed with
+:code:`scrapy-seleniumbase` is available on PyPI and can be installed with
 :code:`pip`:
 
 .. code-block:: sh
 
-  pip install scrapy-selenium-grid
+  pip install scrapy-seleniumbase
 
 
 Activation
@@ -49,8 +49,8 @@ Replace the default :code:`http` and/or :code:`https` Download Handlers through
 .. code-block:: python
 
   DOWNLOAD_HANDLERS = {
-      'http': 'scrapy_selenium_grid.download_handler.ScrapyDownloadHandler',
-      'https': 'scrapy_selenium_grid.download_handler.ScrapyDownloadHandler',
+      'http': 'scrapy_seleniumbase.download_handler.ScrapyDownloadHandler',
+      'https': 'scrapy_seleniumbase.download_handler.ScrapyDownloadHandler',
   }
 
 Note that the :code:`ScrapyDownloadHandler` class inherits from the default
@@ -70,7 +70,7 @@ Also, be sure to `install the asyncio-based Twisted reactor
 Basic Usage
 ===========
 
-Set the `selenium_grid <ScrapyRequestMeta_>`__ key to download a request using
+Set the `seleniumbase <ScrapyRequestMeta_>`__ key to download a request using
 Selenium Grid:
 
 .. code-block:: python
@@ -82,12 +82,12 @@ Selenium Grid:
 
       def start_requests(self):
           # GET request
-          yield scrapy.Request("https://httpbin.org/get", meta={"selenium_grid": True})
+          yield scrapy.Request("https://httpbin.org/get", meta={"seleniumbase": True})
           # POST request
           yield scrapy.FormRequest(
               url="https://httpbin.org/post",
               formdata={"foo": "bar"},
-              meta={"selenium_grid": True},
+              meta={"seleniumbase": True},
           )
 
       def parse(self, response, **kwargs):
@@ -98,7 +98,7 @@ Selenium Grid:
 Supported Settings
 ==================
 
-SELENIUM_GRID_BROWSER_NAME
+SELENIUMBASE_BROWSER_NAME
 --------------------------
 
 Type :code:`str`, default :code:`chrome`
@@ -107,7 +107,7 @@ The browser type to be used in Selenium Grid, e.g. :code:`chrome`, :code:`edge`,
 :code:`firefox`, :code:`ie`, :code:`safari`.
 
 
-SELENIUM_GRID_URL
+SELENIUMBASE_URL
 -----------------
 
 Type :code:`str`, default :code:`http://127.0.0.1:4444`
@@ -115,7 +115,7 @@ Type :code:`str`, default :code:`http://127.0.0.1:4444`
 The Selenium Grid hub url.
 
 
-SELENIUM_GRID_IMPLICIT_WAIT_INSEC
+SELENIUMBASE_IMPLICIT_WAIT_INSEC
 ---------------------------------
 
 Type :code:`int`, default :code:`0`
@@ -135,7 +135,7 @@ increase the duration of the session.
 Supported Request Meta
 ======================
 
-selenium_grid
+seleniumbase
 -------------
 
 Type :code:`bool`, default :code:`False`
@@ -145,32 +145,32 @@ Selenium Grid.
 
 .. code-block:: python
 
-  return scrapy.Request("https://example.org", meta={"selenium_grid": True})
+  return scrapy.Request("https://example.org", meta={"seleniumbase": True})
 
 
-selenium_grid_driver
+seleniumbase_driver
 --------------------
 
-Type :code:`scrapy_selenium_grid.webdriver.WebDriver`
+Type :code:`scrapy_seleniumbase.webdriver.WebDriver`
 
-This will be set with asynchronous Selenium Driver when you enabled selenium_grid
+This will be set with asynchronous Selenium Driver when you enabled seleniumbase
 in request meta.
 
 .. code-block:: python
 
   import scrapy
-  from scrapy_selenium_grid.common.action_chains import ActionChains
+  from scrapy_seleniumbase.common.action_chains import ActionChains
   from selenium.webdriver.common.by import By
   from selenium.webdriver.common.keys import Keys
 
   def start_requests(self):
       yield scrapy.Request(
           url="https://httpbin.org/get",
-          meta={"selenium_grid": True},
+          meta={"seleniumbase": True},
       )
   
   async def parse(self, response, **kwargs):
-      driver = response.meta["selenium_grid_driver"]
+      driver = response.meta["seleniumbase_driver"]
 
       await ActionChains(driver).key_down(Keys.F12).key_up(Keys.F12).perform()
 
@@ -181,12 +181,12 @@ in request meta.
       print(await driver.get_log('browser'))
 
 
-selenium_grid_browser
+seleniumbase_browser
 ---------------------
 
 Type :code:`str`, default :code:`None`
 
-Same values as :code:`SELENIUM_GRID_BROWSER_NAME` but you set it per request.
+Same values as :code:`SELENIUMBASE_BROWSER_NAME` but you set it per request.
 
 
 

@@ -34,8 +34,8 @@ class Config:
     @classmethod
     def from_settings(cls, settings: Settings) -> "Config":
         cfg = cls(
-            browser_name=settings.get("SELENIUM_GRID_BROWSER_NAME") or DEFAULT_BROWSER_NAME,
-            grid_url=settings.get("SELENIUM_GRID_URL") or "http://127.0.0.1:4444",
+            browser_name=settings.get("SELENIUMBASE_BROWSER_NAME") or DEFAULT_BROWSER_NAME,
+            grid_url=settings.get("SELENIUMBASE_URL") or "http://127.0.0.1:4444",
             implicit_wait_insec=settings.get("SELENIUMBASE_IMPLICIT_WAIT_INSEC") or 0,
         )
         return cfg
